@@ -1,0 +1,14 @@
+{
+  "name": "@discapedia/sdk",
+  "version": "1.0.0",
+  "description": "Typed client for the Discapedia API — manage Discord server listings and ad campaigns.",
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": { ".": "./index.ts" },
+  "repository": { "type": "git", "url": "https://github.com/Discapedia/sdk.git" },
+  "homepage": "https://github.com/Discapedia/sdk",
+  "keywords": ["discapedia", "discord", "directory", "ads", "sdk"],
+  "license": "MIT",
+  "sideEffects": false
+}
