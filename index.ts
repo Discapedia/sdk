@@ -4,8 +4,10 @@
  *   import { DiscapediaClient } from "@discapedia/sdk";
  *   const dp = new DiscapediaClient({ apiKey: process.env.DISCAPEDIA_API_KEY! });
  *   const servers = await dp.servers.list();
+ *   const bots = await dp.bots.list();
  *
- * NOTE: there is intentionally no `bump()` — bumping is Discord-only (2h cooldown).
+ * NOTE: there is intentionally no `bump()` and no `vote()` — bumping and voting
+ * are deliberately web/Discord-only (cooldowns + anti-abuse), never via the API.
  */
 
 export interface DiscapediaClientOptions {
@@ -40,6 +42,31 @@ export interface ListingInput {
   bumpChannelId?: string;
 }
 
+export interface BotCommand {
+  name: string;
+  description: string;
+}
+
+export interface BotInput {
+  /** Discord application (client) ID — used to build the OAuth2 invite. */
+  clientId: string;
+  name: string;
+  tagline: string;
+  description: string;
+  prefix?: string;
+  library?: string;
+  /** Discord permissions integer, as a string. */
+  permissions?: string;
+  categorySlug: string;
+  tags: string[];
+  commands?: BotCommand[];
+  supportUrl?: string;
+  websiteUrl?: string;
+  githubUrl?: string;
+  serverCount?: number;
+  nsfw?: boolean;
+}
+
 export interface CampaignInput {
   name: string;
   serverSlug?: string;
@@ -68,7 +95,19 @@ export interface SearchParams {
   perPage?: number;
 }
 
-const DEFAULT_BASE = "https://diswork.15.204.158.166.sslip.io";
+export interface BotSearchParams {
+  q?: string;
+  category?: string;
+  tag?: string;
+  library?: string;
+  minRating?: number;
+  sort?: "bumped" | "votes" | "trending" | "newest" | "servers" | "rating";
+  nsfw?: "hide" | "show" | "only";
+  limit?: number;
+  offset?: number;
+}
+
+const DEFAULT_BASE = "https://discapedia.net";
 
 export class DiscapediaClient {
   private apiKey: string;
@@ -112,6 +151,16 @@ export class DiscapediaClient {
     respondToReview: (reviewId: string, response: string) => this.req<unknown>("POST", `/reviews/${reviewId}/respond`, { response }),
   };
 
+  /** Discord bot listings (scopes: bots:read / bots:write). */
+  bots = {
+    list: () => this.req<unknown[]>("GET", "/bots"),
+    get: (id: string) => this.req<unknown>("GET", `/bots/${id}`),
+    create: (input: BotInput) => this.req<unknown>("POST", "/bots", input),
+    update: (id: string, patch: Partial<BotInput>) => this.req<unknown>("PATCH", `/bots/${id}`, patch),
+    /** top.gg-style stats push — update your bot's live server/shard count. */
+    stats: (id: string, stats: { serverCount: number; shardCount?: number }) => this.req<unknown>("POST", `/bots/${id}/stats`, stats),
+  };
+
   campaigns = {
     list: () => this.req<unknown[]>("GET", "/campaigns"),
     get: (id: string) => this.req<unknown>("GET", `/campaigns/${id}`),
@@ -136,6 +185,12 @@ export class DiscapediaClient {
       return this.req<unknown[]>("GET", `/directory/search?${qs.toString()}`);
     },
     getServer: (slug: string) => this.req<unknown>("GET", `/directory/servers/${slug}`),
+    searchBots: (params: BotSearchParams = {}) => {
+      const qs = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) if (v !== undefined) qs.set(k, String(v));
+      return this.req<unknown[]>("GET", `/directory/bots?${qs.toString()}`);
+    },
+    getBot: (slug: string) => this.req<unknown>("GET", `/directory/bots/${slug}`),
     meta: () => this.req<{ categories: unknown[]; tags: unknown[]; languages: string[] }>("GET", "/meta"),
   };
 }
