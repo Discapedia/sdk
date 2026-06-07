@@ -1,6 +1,6 @@
 # @discapedia/sdk
 
-Typed, zero-dependency client for the [Discapedia](https://diswork.15.204.158.166.sslip.io) API.
+Typed, zero-dependency client for the [Discapedia](https://discapedia.net) API.
 
 ```ts
 import { DiscapediaClient } from "@discapedia/sdk";
